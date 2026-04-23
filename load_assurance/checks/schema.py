@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pyarrow as pa
 
-from load_assurance.adapters.s3 import AdapterStats
+from load_assurance.adapters.base import AdapterStats
 from load_assurance.checks.result import CheckResult, Severity
 from load_assurance.config import SchemaCheckConfig
 

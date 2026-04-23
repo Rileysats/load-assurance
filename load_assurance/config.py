@@ -57,8 +57,12 @@ class S3AdapterConfig(BaseModel):
             raise ValueError(f"S3 path must start with s3://, got: {self.path}")
         return self
 
+class LocalAdapterConfig(BaseModel):
+    type: Literal["local"]
+    path: str
+    format: Literal["parquet"] = "parquet"
 
-AdapterConfig = S3AdapterConfig  # union point — add SnowflakeAdapterConfig etc. later
+AdapterConfig = S3AdapterConfig | LocalAdapterConfig  # union point — add SnowflakeAdapterConfig etc. later
 
 
 # ---------------------------------------------------------------------------
@@ -81,6 +85,8 @@ class PipelineConfig(BaseModel):
                 adapter_type = adapter.get("type")
                 if adapter_type == "s3":
                     values[key] = S3AdapterConfig(**adapter)
+                elif adapter_type == "local":
+                    values[key] = LocalAdapterConfig(**adapter)
                 else:
                     raise ValueError(f"Unsupported adapter type: {adapter_type!r}")
         return values

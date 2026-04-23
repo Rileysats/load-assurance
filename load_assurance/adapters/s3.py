@@ -19,6 +19,8 @@ import boto3
 import pyarrow as pa
 import pyarrow.parquet as pq
 
+from load_assurance.adapters.base import AdapterStats, AbstractAdapter
+
 
 @dataclass
 class S3Location:
@@ -31,19 +33,7 @@ class S3Location:
         return cls(bucket=parsed.netloc, prefix=parsed.path.lstrip("/"))
 
 
-@dataclass
-class AdapterStats:
-    """Everything the engine needs from an adapter — no raw data."""
-    row_count: int
-    schema: pa.Schema
-    null_counts: dict[str, int] = field(default_factory=dict)
-    """null_counts[col] = number of nulls observed in the sample."""
-    sample_rows: int = 0
-    """How many rows were actually read when computing null_counts."""
-    file_count: int = 0
-
-
-class S3ParquetAdapter:
+class S3ParquetAdapter(AbstractAdapter):
     """Read Parquet statistics from S3 without scanning row data."""
 
     def __init__(
@@ -60,40 +50,40 @@ class S3ParquetAdapter:
     # Public API
     # ------------------------------------------------------------------
 
-    def get_stats(
-        self,
-        null_rate_columns: list[str] | None = None,
-        sample_fraction: float = 0.05,
-    ) -> AdapterStats:
-        """
-        Return AdapterStats for this S3 path.
+    # def get_stats(
+    #     self,
+    #     null_rate_columns: list[str] | None = None,
+    #     sample_fraction: float = 0.05,
+    # ) -> AdapterStats:
+    #     """
+    #     Return AdapterStats for this S3 path.
 
-        Args:
-            null_rate_columns: columns to sample for null rates. None = skip.
-            sample_fraction: fraction of files to sample for null checks (0–1).
-        """
-        keys = list(self._list_parquet_keys())
-        if not keys:
-            raise FileNotFoundError(
-                f"No parquet files found at s3://{self.location.bucket}/{self.location.prefix}"
-            )
+    #     Args:
+    #         null_rate_columns: columns to sample for null rates. None = skip.
+    #         sample_fraction: fraction of files to sample for null checks (0–1).
+    #     """
+    #     keys = list(self._list_parquet_keys())
+    #     if not keys:
+    #         raise FileNotFoundError(
+    #             f"No parquet files found at s3://{self.location.bucket}/{self.location.prefix}"
+    #         )
 
-        row_count, schema = self._metadata_stats(keys)
-        null_counts: dict[str, int] = {}
-        sample_rows = 0
+    #     row_count, schema = self._metadata_stats(keys)
+    #     null_counts: dict[str, int] = {}
+    #     sample_rows = 0
 
-        if null_rate_columns:
-            null_counts, sample_rows = self._sample_null_counts(
-                keys, null_rate_columns, sample_fraction
-            )
+    #     if null_rate_columns:
+    #         null_counts, sample_rows = self._sample_null_counts(
+    #             keys, null_rate_columns, sample_fraction
+    #         )
 
-        return AdapterStats(
-            row_count=row_count,
-            schema=schema,
-            null_counts=null_counts,
-            sample_rows=sample_rows,
-            file_count=len(keys),
-        )
+    #     return AdapterStats(
+    #         row_count=row_count,
+    #         schema=schema,
+    #         null_counts=null_counts,
+    #         sample_rows=sample_rows,
+    #         file_count=len(keys),
+    #     )
 
     # ------------------------------------------------------------------
     # Private helpers

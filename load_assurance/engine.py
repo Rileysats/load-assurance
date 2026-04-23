@@ -11,12 +11,14 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from load_assurance.adapters.s3 import AdapterStats, S3ParquetAdapter
+from load_assurance.adapters.s3 import S3ParquetAdapter
+from load_assurance.adapters.local import LocalParquetAdapter
+from load_assurance.adapters.base import AdapterStats, AbstractAdapter
 from load_assurance.checks.null_rate import check_null_rate
 from load_assurance.checks.result import CheckResult, Severity
 from load_assurance.checks.row_count import check_row_count
 from load_assurance.checks.schema import check_schema
-from load_assurance.config import AdapterConfig, PipelineConfig, S3AdapterConfig
+from load_assurance.config import AdapterConfig, PipelineConfig, S3AdapterConfig, LocalAdapterConfig
 
 
 @dataclass
@@ -37,12 +39,16 @@ class RunReport:
         return [r for r in self.results if r.severity == Severity.WARNING]
 
 
-def _build_adapter(config: AdapterConfig) -> S3ParquetAdapter:
+def _build_adapter(config: AdapterConfig) -> AbstractAdapter:
     if isinstance(config, S3AdapterConfig):
         return S3ParquetAdapter(
             path=config.path,
             region=config.region,
             profile=config.profile,
+        )
+    elif isinstance(config, LocalAdapterConfig):
+        return LocalParquetAdapter(
+            path=config.path
         )
     raise NotImplementedError(f"No adapter implemented for: {type(config)}")
 

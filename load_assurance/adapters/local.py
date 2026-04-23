@@ -8,42 +8,45 @@ from pathlib import Path
 import pyarrow as pa
 import pyarrow.parquet as pq
 
-from load_assurance.adapters.s3 import AdapterStats
+from load_assurance.adapters.base import AdapterStats, AbstractAdapter
 
 
-class LocalParquetAdapter:
+class LocalParquetAdapter(AbstractAdapter):
     """Read Parquet statistics from local filesystem — mirrors S3 adapter interface."""
 
     def __init__(self, path: str) -> None:
         self.path = Path(path)
 
-    def get_stats(
-        self,
-        null_rate_columns: list[str] | None = None,
-        sample_fraction: float = 0.05,
-    ) -> AdapterStats:
-        files = self._list_parquet_files()
-        if not files:
-            raise FileNotFoundError(f"No parquet files found at {self.path}")
+    def _location(self) -> str:
+        return str(self.path)
 
-        row_count, schema = self._metadata_stats(files)
-        null_counts: dict[str, int] = {}
-        sample_rows = 0
+    # def get_stats(
+    #     self,
+    #     null_rate_columns: list[str] | None = None,
+    #     sample_fraction: float = 0.05,
+    # ) -> AdapterStats:
+    #     files = self._list_parquet_files()
+    #     if not files:
+    #         raise FileNotFoundError(f"No parquet files found at {self.path}")
 
-        if null_rate_columns:
-            null_counts, sample_rows = self._sample_null_counts(
-                files, null_rate_columns, sample_fraction
-            )
+    #     row_count, schema = self._metadata_stats(files)
+    #     null_counts: dict[str, int] = {}
+    #     sample_rows = 0
 
-        return AdapterStats(
-            row_count=row_count,
-            schema=schema,
-            null_counts=null_counts,
-            sample_rows=sample_rows,
-            file_count=len(files),
-        )
+    #     if null_rate_columns:
+    #         null_counts, sample_rows = self._sample_null_counts(
+    #             files, null_rate_columns, sample_fraction
+    #         )
 
-    def _list_parquet_files(self) -> list[Path]:
+    #     return AdapterStats(
+    #         row_count=row_count,
+    #         schema=schema,
+    #         null_counts=null_counts,
+    #         sample_rows=sample_rows,
+    #         file_count=len(files),
+    #     )
+
+    def _list_files(self) -> list[Path]:
         if self.path.is_file():
             return [self.path]
         return sorted(self.path.glob("**/*.parquet")) + sorted(self.path.glob("**/*.parq"))
