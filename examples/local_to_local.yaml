@@ -1,0 +1,22 @@
+pipeline: local_test
+
+source:
+  type: local
+  path: test_data/source/
+  format: parquet
+
+target:
+  type: local
+  path: test_data/target/
+  format: parquet
+
+checks:
+  row_count:
+    enabled: true
+    tolerance_pct: 0.0
+
+  schema_check:
+    enabled: true
+
+  null_rate:
+    enabled: false

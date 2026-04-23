@@ -1,0 +1,28 @@
+pipeline: daily_trades_load
+
+source:
+  type: s3
+  path: s3://my-raw-bucket/trades/2024-01-01/
+  format: parquet
+
+target:
+  type: s3
+  path: s3://my-processed-bucket/trades/2024-01-01/
+  format: parquet
+
+checks:
+  row_count:
+    enabled: true
+    tolerance_pct: 0.0       # exact match required
+
+  schema_check:
+    enabled: true
+    ignore_nullable: false
+
+  null_rate:
+    enabled: true
+    columns:
+      - trade_id
+      - price
+      - quantity
+    max_null_pct: 0.01       # max 1% nulls allowed
